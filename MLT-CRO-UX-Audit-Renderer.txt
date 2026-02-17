@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MLT CRO & UX Audit Renderer</title>
+  <style>
+    :root {
+      --mlt-red: #e21a23;
+      --mlt-orange: #f58220;
+      --mlt-yellow: #ffcf06;
+      --mlt-ink: #17161b;
+      --mlt-muted: #6f6a72;
+      --mlt-bg: #f3f2f0;
+      --mlt-surface: #ffffff;
+      --mlt-border: #e5e2de;
+      --mlt-soft: #f9f8f6;
+      --radius-lg: 12px;
+      --radius-md: 10px;
+      --shadow: 0 6px 18px rgba(22, 20, 17, 0.06);
+      --brand-gradient: linear-gradient(90deg, #e21a23 0%, #f58220 58%, #ffcf06 100%);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 26px;
+      background: var(--mlt-bg);
+      color: var(--mlt-ink);
+      font-family: "Avenir Next", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.45;
+      font-weight: 400;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1160px;
+      margin: 0 auto;
+    }
+
+    .export-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .pdf-export-btn {
+      appearance: none;
+      border: 1px solid #d5d0c9;
+      background: #fff;
+      color: var(--mlt-ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .card {
+      background: var(--mlt-surface);
+      border: 1px solid var(--mlt-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .header {
+      position: relative;
+      padding: 24px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: var(--brand-gradient);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: clamp(28px, 3.2vw, 40px);
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      font-weight: 650;
+    }
+
+    .header-subtitle {
+      margin: 6px 0 0;
+      font-size: 15px;
+      color: var(--mlt-muted);
+      font-weight: 500;
+    }
+
+    .logo-lockup {
+      width: 118px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .logo-lockup img,
+    .footer-logo img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .date-pill {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #eddac4;
+      background: #fff4e5;
+      border-radius: 999px;
+      padding: 7px 12px;
+      color: #5b4534;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .section {
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    .section-intro {
+      margin: 0 0 12px;
+      color: var(--mlt-muted);
+      font-size: 13px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .kpi-grid.cols-1 { grid-template-columns: 1fr; }
+    .kpi-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .kpi-card {
+      border: 1px solid var(--mlt-border);
+      border-top: 3px solid #e4dfd8;
+      border-radius: var(--radius-md);
+      background: #fff;
+      padding: 12px;
+      min-height: 102px;
+    }
+
+    .kpi-card.accent-red { border-top-color: var(--mlt-red); }
+    .kpi-card.accent-orange { border-top-color: var(--mlt-orange); }
+    .kpi-card.accent-yellow { border-top-color: var(--mlt-yellow); }
+    .kpi-card.accent-ink { border-top-color: #2d2930; }
+
+    .kpi-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #534a54;
+      background: #f1ece6;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+    }
+
+    .kpi-value {
+      margin: 0;
+      font-size: clamp(20px, 2.4vw, 34px);
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      font-weight: 620;
+      color: #1f1c22;
+    }
+
+    .kpi-label {
+      margin: 4px 0 0;
+      font-size: 13px;
+      font-weight: 560;
+      color: #2d2831;
+    }
+
+    .kpi-note {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: #78717d;
+    }
+
+    .summary-box {
+      border: 1px solid var(--mlt-border);
+      border-left: 3px solid var(--mlt-red);
+      border-radius: var(--radius-md);
+      background: linear-gradient(100deg, #fff 0%, #fff9f4 100%);
+      padding: 14px;
+      margin-top: 10px;
+    }
+
+    .summary-box p {
+      margin: 0;
+      font-size: 13px;
+      color: #3d3642;
+      line-height: 1.65;
+    }
+
+    .muted-box {
+      border: 1px dashed #d5d0c8;
+      background: #fcfbf9;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      color: #6d6571;
+      font-size: 12px;
+    }
+
+    .page-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 7px;
+    }
+
+    .page-item {
+      border: 1px solid var(--mlt-border);
+      border-left: 3px solid #e9d4c5;
+      border-radius: 8px;
+      background: var(--mlt-soft);
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .page-name {
+      font-size: 13px;
+      font-weight: 620;
+      color: #232029;
+    }
+
+    .page-meta {
+      font-size: 12px;
+      color: #6f6674;
+      text-align: right;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--mlt-border);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #fff;
+    }
+
+    thead th {
+      background: #232129;
+      color: #fff;
+      text-align: left;
+      font-weight: 620;
+      padding: 10px 11px;
+      border-bottom: 1px solid #2f2b35;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 10px 11px;
+      border-bottom: 1px solid #efebe6;
+      color: #3f3846;
+      vertical-align: top;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #fdfcfa;
+    }
+
+    .simple-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .insight-card,
+    .phase-card {
+      border: 1px solid var(--mlt-border);
+      border-left: 3px solid #f0cd7d;
+      border-radius: 9px;
+      background: var(--mlt-soft);
+      padding: 12px;
+    }
+
+    .insight-card h3,
+    .phase-card h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      line-height: 1.3;
+      color: #25212a;
+      font-weight: 620;
+    }
+
+    .insight-card p,
+    .phase-card p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #514957;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .badge.high { background: #fde8e8; color: #aa1111; }
+    .badge.medium { background: #fff1de; color: #9c5c06; }
+    .badge.low { background: #efeaf4; color: #5f4976; }
+
+    .footer {
+      margin-top: 6px;
+      border-top: 1px solid var(--mlt-border);
+      padding: 12px 2px 2px;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      color: #766f79;
+      font-size: 11px;
+    }
+
+    .footer-logo {
+      width: 74px;
+      opacity: 0.95;
+      flex-shrink: 0;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 980px) {
+      body { padding: 18px; }
+      .kpi-grid.cols-3,
+      .simple-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .logo-lockup { width: 102px; }
+      .kpi-grid.cols-2,
+      .kpi-grid.cols-3,
+      .simple-grid { grid-template-columns: 1fr; }
+      .page-item {
+        flex-direction: column;
+      }
+      .page-meta {
+        text-align: left;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4;
+        margin: 10mm;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        forced-color-adjust: none !important;
+      }
+
+      body {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #fff !important;
+      }
+
+      .export-actions,
+      .dev-note {
+        display: none !important;
+      }
+
+      .container {
+        max-width: none !important;
+        width: 100% !important;
+      }
+
+      .card,
+      .kpi-card,
+      .insight-card,
+      .phase-card,
+      .page-item,
+      .summary-box {
+        box-shadow: none !important;
+      }
+
+      .header,
+      .section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .header {
+        padding: 16px !important;
+        margin-bottom: 10px !important;
+      }
+
+      .section {
+        padding: 12px !important;
+        margin-bottom: 10px !important;
+      }
+
+      .header-top {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+      }
+
+      .logo-lockup {
+        width: 108px !important;
+      }
+
+      .kpi-grid.cols-3,
+      .simple-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+
+      .kpi-grid.cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+
+      .kpi-grid.cols-1 {
+        grid-template-columns: 1fr !important;
+      }
+
+      .kpi-card {
+        min-height: 96px !important;
+      }
+
+      .date-pill {
+        border-color: #e2c7a7 !important;
+        background: #ffeed7 !important;
+      }
+
+      .table-wrap {
+        overflow: visible !important;
+      }
+
+      table {
+        font-size: 11px !important;
+      }
+
+      thead th,
+      tbody td {
+        padding: 7px 8px !important;
+      }
+
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .footer {
+        font-size: 10px !important;
+      }
+
+      .footer-logo {
+        width: 66px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="report-root">
+    <div class="export-actions">
+      <button type="button" class="pdf-export-btn" onclick="exportToPDF()">Export to PDF</button>
+    </div>
+
+    <div class="dev-note muted-box" id="dev-note">
+      Paste Perplexity JSON into the <code>report-data</code> script block and refresh. Sections auto-hide when data is missing.
+    </div>
+
+    <header class="header card">
+      <div class="header-top">
+        <div>
+          <h1 id="report-title">Website Performance &amp; CRO Audit</h1>
+          <p class="header-subtitle" id="report-client">Client Name</p>
+        </div>
+        <div class="logo-lockup" aria-label="MLT logo">
+          <img src="mlt-logo.png" alt="MLT logo" loading="eager" decoding="sync" fetchpriority="high">
+        </div>
+      </div>
+      <div class="date-pill" id="report-period">Analysis Period: Not set</div>
+    </header>
+
+    <section class="section card" id="section-summary">
+      <h2 class="section-title">Executive Summary</h2>
+      <div class="kpi-grid cols-3" id="kpi-grid"></div>
+      <div class="summary-box" id="summary-text"></div>
+    </section>
+
+    <section class="section card" id="section-baseline">
+      <h2 class="section-title">Baseline Performance</h2>
+      <p class="section-intro" id="baseline-intro"></p>
+      <div id="baseline-tables"></div>
+    </section>
+
+    <section class="section card" id="section-pages">
+      <h2 class="section-title">Top Pages by Engagement</h2>
+      <ul class="page-list" id="top-pages-list"></ul>
+    </section>
+
+    <section class="section card" id="section-source-mix">
+      <h2 class="section-title">Enquiry Source Mix</h2>
+      <p class="section-intro" id="source-mix-intro"></p>
+      <div class="table-wrap" id="source-mix-table-wrap"></div>
+    </section>
+
+    <section class="section card" id="section-insights">
+      <h2 class="section-title">Behaviour Insights</h2>
+      <div class="simple-grid" id="insight-grid"></div>
+    </section>
+
+    <section class="section card" id="section-tracking">
+      <h2 class="section-title">Conversion &amp; Tracking Analysis</h2>
+      <p class="section-intro" id="tracking-intro"></p>
+      <div id="tracking-events-wrap"></div>
+      <div id="tracking-gaps-wrap" style="margin-top:10px;"></div>
+    </section>
+
+    <section class="section card" id="section-recommendations">
+      <h2 class="section-title">Recommended Fixes</h2>
+      <p class="section-intro" id="recommendations-intro"></p>
+      <div class="table-wrap" id="recommendations-wrap"></div>
+    </section>
+
+    <section class="section card" id="section-next-90">
+      <h2 class="section-title">Next 90 Days</h2>
+      <div class="simple-grid" id="phase-grid"></div>
+    </section>
+
+    <footer class="footer" id="report-footer">
+      <div>
+        <div id="footer-line-1">Report generated: N/A | CRO &amp; UX Audit by MLT</div>
+        <div id="footer-line-2">Data sources: N/A</div>
+      </div>
+      <div class="footer-logo" aria-label="MLT logo">
+        <img src="mlt-logo.png" alt="MLT logo" loading="eager" decoding="sync">
+      </div>
+    </footer>
+  </div>
+
+  <script id="report-data" type="application/json">
+{
+  "meta": {
+    "report_title": "Website Performance & CRO Audit",
+    "client_name": "Example Legal",
+    "analysis_period": "Nov 13, 2025 - Feb 11, 2026",
+    "generated_date": "February 2026",
+    "logo_path": "mlt-logo.png",
+    "data_sources": ["GA4", "Clarity", "Call tracking"],
+    "hide_dev_note": false
+  },
+  "executive_summary": {
+    "kpis": [
+      {"code": "TS", "value": "1,541", "label": "Total Sessions", "note": "Steady, well-engaged visitors", "accent": "red"},
+      {"code": "AT", "value": "120s", "label": "Avg. Time on Site", "note": "Good engagement depth", "accent": "orange"},
+      {"code": "FM", "value": "83", "label": "Form Submissions", "note": "From website contact forms", "accent": "yellow"},
+      {"code": "ENQ", "value": "150+", "label": "Phone Enquiries", "note": "Calls are the main channel", "accent": "ink"}
+    ],
+    "tldr": "Over the last three months, the website generated approximately 230-250 total enquiries. Phone enquiries significantly outnumber web forms. The homepage and key service pages show strong intent, but mobile users often miss high-value content in the first viewport."
+  },
+  "baseline": {
+    "intro": "Core traffic, engagement and conversion metrics for the review period.",
+    "tables": [
+      {
+        "title": "Traffic & Engagement",
+        "columns": ["Metric", "Value", "Commentary"],
+        "rows": [
+          ["Total sessions", "1,541", "Stable period-on-period"],
+          ["Average engagement time", "120s", "Strong attention for legal visitors"]
+        ]
+      }
+    ]
+  },
+  "top_pages": [
+    {"name": "Homepage", "meta": "654 views - Entry point for most visitors"},
+    {"name": "Physiotherapy Compensation Story", "meta": "210 views - High intent content"}
+  ],
+  "source_mix": {
+    "intro": "Breakdown of total form submissions by source.",
+    "columns": ["Source", "Share", "Comment"],
+    "rows": [
+      ["Google Ads", "59%", "Primary driver of form volume"],
+      ["Google Organic", "24%", "Strong support channel"],
+      ["Direct", "14%", "Brand and referral demand"],
+      ["Other", "3%", "Long-tail sources"]
+    ]
+  },
+  "behaviour_insights": [
+    {"title": "High Intent Content", "body": "Users actively engage with case stories and team profiles."},
+    {"title": "Mobile Scroll Constraint", "body": "Mobile users often do not pass the first viewport."},
+    {"title": "Friction Points", "body": "Some dead clicks and older URLs create avoidable friction."}
+  ],
+  "tracking": {
+    "intro": "Current tracking captures core actions, with a few attribution gaps.",
+    "events_table": {
+      "columns": ["Event", "Status", "Notes"],
+      "rows": [
+        ["Form submission", "Tracked", "Available in analytics"],
+        ["Phone clicks", "Tracked", "No call quality loop"]
+      ]
+    },
+    "gaps": [
+      "No single unified lead event across channels.",
+      "No lead qualification status fed back to analytics."
+    ]
+  },
+  "recommendations": {
+    "intro": "Prioritised UX and CRO actions based on observed behaviour and current tracking.",
+    "use_ice": true,
+    "rows": [
+      {
+        "area": "Homepage",
+        "issue": "Core proposition and CTA are too soft above the fold.",
+        "fix": "Tighten headline and place one clear primary contact CTA in first viewport.",
+        "impact": "Higher click-through to contact actions.",
+        "priority": "High",
+        "ice": "22",
+        "phase": "Phase 1"
+      },
+      {
+        "area": "Contact journey",
+        "issue": "Some non-clickable elements appear interactive.",
+        "fix": "Remove or restyle misleading UI components and validate interactive states.",
+        "impact": "Lower dead clicks and reduced friction.",
+        "priority": "High",
+        "ice": "21",
+        "phase": "Phase 1"
+      }
+    ]
+  },
+  "next_90_days": [
+    {
+      "title": "Phase 1 (Weeks 1-4)",
+      "body": "Rework hero messaging, resolve dead clicks and improve mobile CTA visibility.",
+      "accent": "red"
+    },
+    {
+      "title": "Phase 2 (Weeks 5-8)",
+      "body": "Add conversion modules to high-engagement pages and refine enquiry form flow.",
+      "accent": "orange"
+    },
+    {
+      "title": "Measurement",
+      "body": "Track lead volume and source quality by channel to validate uplift.",
+      "accent": "ink"
+    }
+  ]
+}
+  </script>
+
+  <script>
+    (function () {
+      function byId(id) { return document.getElementById(id); }
+
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function asArray(value) {
+        return Array.isArray(value) ? value : [];
+      }
+
+      function isBlank(value) {
+        return value == null || String(value).trim() === '';
+      }
+
+      function setText(id, value, fallback) {
+        var el = byId(id);
+        if (!el) return;
+        el.textContent = isBlank(value) ? (fallback || '') : String(value);
+      }
+
+      function hideSection(id) {
+        var el = byId(id);
+        if (el) el.classList.add('hidden');
+      }
+
+      function renderTable(columns, rows) {
+        var safeColumns = asArray(columns);
+        var safeRows = asArray(rows);
+        if (!safeColumns.length || !safeRows.length) return '';
+
+        var head = '<thead><tr>' + safeColumns.map(function (c) {
+          return '<th>' + escapeHtml(c) + '</th>';
+        }).join('') + '</tr></thead>';
+
+        var body = '<tbody>' + safeRows.map(function (row) {
+          var cells = asArray(row);
+          return '<tr>' + safeColumns.map(function (_, i) {
+            return '<td>' + escapeHtml(cells[i] == null ? '' : cells[i]) + '</td>';
+          }).join('') + '</tr>';
+        }).join('') + '</tbody>';
+
+        return '<table>' + head + body + '</table>';
+      }
+
+      function renderList(items) {
+        var safeItems = asArray(items).filter(function (x) { return !isBlank(x); });
+        if (!safeItems.length) return '';
+        return '<ul style="margin:0; padding-left:16px; color:#4b4454; font-size:12px; line-height:1.6;">' + safeItems.map(function (item) {
+          return '<li>' + escapeHtml(item) + '</li>';
+        }).join('') + '</ul>';
+      }
+
+      function priorityBadge(priority) {
+        var val = String(priority || '').toLowerCase();
+        if (val === 'high') return '<span class="badge high">High</span>';
+        if (val === 'medium') return '<span class="badge medium">Medium</span>';
+        if (val === 'low') return '<span class="badge low">Low</span>';
+        return escapeHtml(priority || '');
+      }
+
+      function formatKpiBadge(kpi) {
+        var code = String((kpi && kpi.code) || '').trim();
+        if (code) {
+          var compact = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          if (compact.length >= 2 && compact.length <= 4) return compact;
+
+          var tokens = code.split(/[_\s-]+/).filter(Boolean);
+          var initials = tokens.map(function (t) {
+            return String(t).charAt(0);
+          }).join('').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          if (initials.length >= 2) return initials.slice(0, 4);
+        }
+
+        var label = String((kpi && kpi.label) || '').trim();
+        var stopWords = {
+          'AND': true, 'OF': true, 'THE': true, 'ON': true, 'IN': true,
+          'BY': true, 'FOR': true, 'WITH': true, 'PER': true
+        };
+        var picks = label.split(/\s+/).filter(Boolean).filter(function (w) {
+          return !stopWords[String(w).toUpperCase()];
+        }).slice(0, 3).map(function (w) {
+          return String(w).charAt(0);
+        }).join('').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+        if (picks.length >= 2) return picks.slice(0, 4);
+        return 'KPI';
+      }
+
+      function normalize(raw) {
+        var data = raw && typeof raw === 'object' ? raw : {};
+
+        var out = {
+          meta: data.meta || {},
+          executive_summary: data.executive_summary || {},
+          baseline: data.baseline || {},
+          top_pages: asArray(data.top_pages),
+          source_mix: data.source_mix || {},
+          behaviour_insights: asArray(data.behaviour_insights),
+          tracking: data.tracking || {},
+          recommendations: data.recommendations || {},
+          next_90_days: asArray(data.next_90_days)
+        };
+
+        var cards = asArray(out.executive_summary.kpis).slice(0, 6);
+        out.executive_summary.kpis = cards;
+        out.executive_summary.kpi_cols = cards.length <= 1 ? 1 : (cards.length === 2 ? 2 : 3);
+
+        return out;
+      }
+
+      function parseData() {
+        var el = byId('report-data');
+        if (!el) return {};
+        try {
+          return JSON.parse(el.textContent || '{}');
+        } catch (err) {
+          hideSection('section-summary');
+          hideSection('section-baseline');
+          hideSection('section-pages');
+          hideSection('section-source-mix');
+          hideSection('section-insights');
+          hideSection('section-tracking');
+          hideSection('section-recommendations');
+          hideSection('section-next-90');
+          var note = byId('dev-note');
+          if (note) {
+            note.classList.remove('hidden');
+            note.innerHTML = '<strong>JSON parse error:</strong> ' + escapeHtml(err.message);
+          }
+          return {};
+        }
+      }
+
+      function render(data) {
+        var meta = data.meta || {};
+        setText('report-title', meta.report_title, 'Website Performance & CRO Audit');
+        setText('report-client', meta.client_name, 'Client Name');
+        setText('report-period', 'Analysis Period: ' + (meta.analysis_period || 'Not set'));
+
+        var devNote = byId('dev-note');
+        if (devNote && meta.hide_dev_note === true) devNote.classList.add('hidden');
+
+        var logoPath = !isBlank(meta.logo_path) ? String(meta.logo_path) : 'mlt-logo.png';
+        var logoImages = document.querySelectorAll('.logo-lockup img, .footer-logo img');
+        Array.prototype.forEach.call(logoImages, function (img) {
+          img.onerror = function () {
+            if (!img.dataset.fallbackTried && logoPath !== 'mlt-logo.png') {
+              img.dataset.fallbackTried = '1';
+              img.src = 'mlt-logo.png';
+            } else {
+              img.style.display = 'none';
+            }
+          };
+          img.src = logoPath;
+        });
+
+        var kpiGrid = byId('kpi-grid');
+        var kpis = asArray(data.executive_summary.kpis);
+        if (kpiGrid && kpis.length) {
+          kpiGrid.classList.remove('cols-1', 'cols-2', 'cols-3');
+          kpiGrid.classList.add('cols-' + (data.executive_summary.kpi_cols || 3));
+          kpiGrid.innerHTML = kpis.map(function (kpi) {
+            var accent = String(kpi.accent || '').toLowerCase();
+            if (!accent || ['red', 'orange', 'yellow', 'ink'].indexOf(accent) === -1) accent = 'ink';
+            return [
+              '<article class="kpi-card accent-' + escapeHtml(accent) + '">',
+              '<div class="kpi-badge">' + escapeHtml(formatKpiBadge(kpi)) + '</div>',
+              '<p class="kpi-value">' + escapeHtml(kpi.value || '-') + '</p>',
+              '<p class="kpi-label">' + escapeHtml(kpi.label || '') + '</p>',
+              '<p class="kpi-note">' + escapeHtml(kpi.note || '') + '</p>',
+              '</article>'
+            ].join('');
+          }).join('');
+        } else {
+          hideSection('section-summary');
+        }
+
+        var summaryText = byId('summary-text');
+        if (summaryText && !isBlank(data.executive_summary.tldr)) {
+          summaryText.innerHTML = '<p>' + escapeHtml(data.executive_summary.tldr) + '</p>';
+        } else if (summaryText) {
+          summaryText.innerHTML = '<p>No summary text provided for this period.</p>';
+        }
+
+        setText('baseline-intro', data.baseline.intro || '');
+        var baselineWrap = byId('baseline-tables');
+        var baselineTables = asArray(data.baseline.tables);
+        if (baselineWrap && baselineTables.length) {
+          baselineWrap.innerHTML = baselineTables.map(function (block) {
+            var tableHtml = renderTable(block.columns, block.rows);
+            if (!tableHtml) return '';
+            return [
+              '<div style="margin-bottom:12px;">',
+              block.title ? '<p style="margin:0 0 7px; font-size:13px; font-weight:620; color:#2a2530;">' + escapeHtml(block.title) + '</p>' : '',
+              '<div class="table-wrap">' + tableHtml + '</div>',
+              block.note ? '<p class="section-intro" style="margin-top:6px; margin-bottom:0;">' + escapeHtml(block.note) + '</p>' : '',
+              '</div>'
+            ].join('');
+          }).join('');
+        } else {
+          hideSection('section-baseline');
+        }
+
+        var pages = asArray(data.top_pages);
+        var pageList = byId('top-pages-list');
+        if (pageList && pages.length) {
+          pageList.innerHTML = pages.map(function (page) {
+            return [
+              '<li class="page-item">',
+              '<span class="page-name">' + escapeHtml(page.name || '') + '</span>',
+              '<span class="page-meta">' + escapeHtml(page.meta || '') + '</span>',
+              '</li>'
+            ].join('');
+          }).join('');
+        } else {
+          hideSection('section-pages');
+        }
+
+        setText('source-mix-intro', data.source_mix.intro || '');
+        var sourceWrap = byId('source-mix-table-wrap');
+        var sourceTable = renderTable(data.source_mix.columns, data.source_mix.rows);
+        if (sourceWrap && sourceTable) {
+          sourceWrap.innerHTML = sourceTable;
+        } else {
+          hideSection('section-source-mix');
+        }
+
+        var insightGrid = byId('insight-grid');
+        var insights = asArray(data.behaviour_insights);
+        if (insightGrid && insights.length) {
+          insightGrid.innerHTML = insights.slice(0, 6).map(function (item) {
+            return [
+              '<article class="insight-card">',
+              '<h3>' + escapeHtml(item.title || '') + '</h3>',
+              '<p>' + escapeHtml(item.body || '') + '</p>',
+              '</article>'
+            ].join('');
+          }).join('');
+        } else {
+          hideSection('section-insights');
+        }
+
+        setText('tracking-intro', data.tracking.intro || '');
+        var trackingEvents = byId('tracking-events-wrap');
+        var trackingEventsTable = data.tracking.events_table ? renderTable(data.tracking.events_table.columns, data.tracking.events_table.rows) : '';
+        if (trackingEvents && trackingEventsTable) {
+          trackingEvents.innerHTML = '<div class="table-wrap">' + trackingEventsTable + '</div>';
+        }
+
+        var trackingGaps = byId('tracking-gaps-wrap');
+        var trackingGapsHtml = renderList(data.tracking.gaps);
+        if (trackingGaps && trackingGapsHtml) {
+          trackingGaps.innerHTML = '<div class="muted-box"><strong style="display:block; margin-bottom:6px; color:#3e3747;">Tracking Gaps</strong>' + trackingGapsHtml + '</div>';
+        }
+        if (!trackingEventsTable && !trackingGapsHtml) {
+          hideSection('section-tracking');
+        }
+
+        setText('recommendations-intro', data.recommendations.intro || '');
+        var recRows = asArray(data.recommendations.rows);
+        var recWrap = byId('recommendations-wrap');
+        if (recWrap && recRows.length) {
+          var useIce = !!data.recommendations.use_ice;
+          var columns = useIce
+            ? ['Area', 'Issue', 'Recommended Fix', 'Expected Impact', 'Priority', 'ICE', 'Phase']
+            : ['Area', 'Issue', 'Recommended Fix', 'Expected Impact'];
+
+          var rows = recRows.map(function (row) {
+            if (useIce) {
+              return [
+                row.area || '',
+                row.issue || '',
+                row.fix || '',
+                row.impact || '',
+                priorityBadge(row.priority || ''),
+                row.ice || '',
+                row.phase || ''
+              ];
+            }
+            return [row.area || '', row.issue || '', row.fix || '', row.impact || ''];
+          });
+
+          var head = '<thead><tr>' + columns.map(function (c) {
+            return '<th>' + escapeHtml(c) + '</th>';
+          }).join('') + '</tr></thead>';
+
+          var body = '<tbody>' + rows.map(function (cells) {
+            return '<tr>' + cells.map(function (cell, idx) {
+              if (useIce && idx === 4) return '<td>' + cell + '</td>';
+              return '<td>' + escapeHtml(cell) + '</td>';
+            }).join('') + '</tr>';
+          }).join('') + '</tbody>';
+
+          recWrap.innerHTML = '<table>' + head + body + '</table>';
+        } else {
+          hideSection('section-recommendations');
+        }
+
+        var phaseGrid = byId('phase-grid');
+        var phases = asArray(data.next_90_days);
+        if (phaseGrid && phases.length) {
+          phaseGrid.innerHTML = phases.slice(0, 6).map(function (phase) {
+            var accent = String(phase.accent || '').toLowerCase();
+            var border = '#f0cd7d';
+            if (accent === 'red') border = '#e21a23';
+            if (accent === 'orange') border = '#f58220';
+            if (accent === 'ink') border = '#2d2930';
+            return [
+              '<article class="phase-card" style="border-left-color:' + escapeHtml(border) + ';">',
+              '<h3>' + escapeHtml(phase.title || '') + '</h3>',
+              '<p>' + escapeHtml(phase.body || '') + '</p>',
+              '</article>'
+            ].join('');
+          }).join('');
+        } else {
+          hideSection('section-next-90');
+        }
+
+        setText('footer-line-1', 'Report generated: ' + (meta.generated_date || 'N/A') + ' | CRO & UX Audit by MLT');
+        var sources = asArray(meta.data_sources);
+        setText('footer-line-2', 'Data sources: ' + (sources.length ? sources.join(', ') : 'Not specified') + ' | Period: ' + (meta.analysis_period || 'Not set'));
+      }
+
+      async function waitForPrintAssets() {
+        var images = Array.prototype.slice.call(document.images || []);
+        var waits = images.map(function (img) {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise(function (resolve) {
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+          });
+        });
+        if (document.fonts && document.fonts.ready) {
+          try { await document.fonts.ready; } catch (e) {}
+        }
+        await Promise.all(waits);
+        await new Promise(function (resolve) { setTimeout(resolve, 80); });
+      }
+
+      window.exportToPDF = async function exportToPDF() {
+        var previousTitle = document.title;
+        document.title = previousTitle && previousTitle.trim() ? previousTitle : 'MLT-CRO-UX-Report';
+        await waitForPrintAssets();
+        window.print();
+        setTimeout(function () { document.title = previousTitle; }, 50);
+      };
+
+      var parsed = parseData();
+      render(normalize(parsed));
+    })();
+  </script>
+</body>
+</html>
