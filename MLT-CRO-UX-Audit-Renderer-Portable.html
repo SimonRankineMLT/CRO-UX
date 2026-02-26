@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MLT CRO & UX Audit Renderer</title>
+  <title>Client Name – CRO & UX Audit</title>
   <style>
     :root {
       --mlt-red: #e21a23;
@@ -398,6 +398,128 @@
       margin-top: 4px;
     }
 
+    .benchmark-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .benchmark-card {
+      border: 1px solid var(--mlt-border);
+      border-left: 3px solid #f0cd7d;
+      border-radius: 9px;
+      background: var(--mlt-soft);
+      padding: 12px;
+    }
+
+    .benchmark-head {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .benchmark-title {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.35;
+      color: #25212a;
+      font-weight: 620;
+    }
+
+    .benchmark-score {
+      flex-shrink: 0;
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 700;
+      color: #211d27;
+    }
+
+    .benchmark-score.band-red { color: #b7171f; }
+    .benchmark-score.band-amber { color: #a26212; }
+    .benchmark-score.band-green { color: #2f7c00; }
+
+    .benchmark-rail {
+      position: relative;
+      margin: 9px 0 8px;
+      padding-top: 2px;
+      height: 16px;
+    }
+
+    .benchmark-track {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #e21a23 0%, #f58220 50%, #4ac000 100%);
+      border: 1px solid #d9d3ca;
+    }
+
+    .benchmark-marker {
+      position: absolute;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .benchmark-marker.current {
+      top: -1px;
+      width: 2px;
+      height: 12px;
+      border-radius: 1px;
+      background: #201c25;
+    }
+
+    .benchmark-marker.target {
+      top: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid #201c25;
+      background: #fff;
+    }
+
+    .benchmark-legend {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      font-size: 11px;
+      color: #4f4758;
+      margin-bottom: 6px;
+    }
+
+    .trend-chip,
+    .confidence-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .trend-up { background: #e8f8df; color: #2f7c00; }
+    .trend-down { background: #fde8e8; color: #b7171f; }
+    .trend-flat { background: #efeaf4; color: #5b5168; }
+    .trend-na { background: #f1eef4; color: #746b80; }
+
+    .conf-high { background: #e8f8df; color: #286800; }
+    .conf-medium { background: #fff1de; color: #995c0e; }
+    .conf-low { background: #fde8e8; color: #a9161f; }
+
+    .benchmark-note,
+    .benchmark-rationale {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #5a5262;
+    }
+
+    .benchmark-rationale {
+      margin-top: 4px;
+      color: #6e6679;
+    }
+
     .badge {
       display: inline-flex;
       align-items: center;
@@ -443,6 +565,7 @@
       .kpi-grid.cols-3,
       .simple-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .quarter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .benchmark-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 720px) {
@@ -455,6 +578,7 @@
       .kpi-grid.cols-3,
       .simple-grid { grid-template-columns: 1fr; }
       .quarter-grid { grid-template-columns: 1fr; }
+      .benchmark-grid { grid-template-columns: 1fr; }
       .page-item {
         flex-direction: column;
       }
@@ -495,6 +619,7 @@
       .card,
       .kpi-card,
       .insight-card,
+      .benchmark-card,
       .quarter-card,
       .page-item,
       .summary-box {
@@ -532,6 +657,10 @@
       }
 
       .quarter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+
+      .benchmark-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
       }
 
@@ -575,6 +704,7 @@
       }
 
       tbody tr,
+      .benchmark-card,
       .quarter-card {
         break-inside: avoid !important;
         page-break-inside: avoid !important;
@@ -606,7 +736,7 @@
     <header class="header card">
       <div class="header-top">
         <div>
-          <h1 id="report-title">Website Performance &amp; CRO Audit</h1>
+          <h1 id="report-title">Client Name &ndash; CRO &amp; UX Audit</h1>
           <p class="header-subtitle" id="report-client">Client Name</p>
         </div>
         <div class="logo-lockup" aria-label="MLT logo">
@@ -622,43 +752,49 @@
       <div class="summary-box" id="summary-text"></div>
     </section>
 
+    <section class="section card" id="section-benchmark-sliders">
+      <h2 class="section-title">Benchmark Snapshot</h2>
+      <div class="section-intro" id="benchmark-intro"></div>
+      <div class="benchmark-grid" id="benchmark-grid"></div>
+    </section>
+
     <section class="section card" id="section-baseline">
       <h2 class="section-title">Baseline Performance</h2>
-      <p class="section-intro" id="baseline-intro"></p>
+      <div class="section-intro" id="baseline-intro"></div>
       <div id="baseline-tables"></div>
     </section>
 
     <section class="section card" id="section-pages">
-      <h2 class="section-title">Top Pages by Engagement</h2>
-      <ul class="page-list" id="top-pages-list"></ul>
+      <h2 class="section-title">Key Pages &amp; Journeys</h2>
+      <div class="table-wrap" id="top-pages-table-wrap"></div>
     </section>
 
     <section class="section card" id="section-source-mix">
-      <h2 class="section-title">Enquiry Source Mix</h2>
-      <p class="section-intro" id="source-mix-intro"></p>
+      <h2 class="section-title">Traffic &amp; Source Mix</h2>
+      <div class="section-intro" id="source-mix-intro"></div>
       <div class="table-wrap" id="source-mix-table-wrap"></div>
     </section>
 
     <section class="section card" id="section-insights">
-      <h2 class="section-title">Behaviour Insights</h2>
+      <h2 class="section-title">Behavioural Insights</h2>
       <div class="simple-grid" id="insight-grid"></div>
     </section>
 
     <section class="section card" id="section-tracking">
-      <h2 class="section-title">Conversion &amp; Tracking Analysis</h2>
-      <p class="section-intro" id="tracking-intro"></p>
+      <h2 class="section-title">Tracking &amp; Data Quality</h2>
+      <div class="section-intro" id="tracking-intro"></div>
       <div id="tracking-events-wrap"></div>
       <div id="tracking-gaps-wrap" style="margin-top:10px;"></div>
     </section>
 
     <section class="section card" id="section-recommendations">
-      <h2 class="section-title">Recommended Fixes</h2>
-      <p class="section-intro" id="recommendations-intro"></p>
+      <h2 class="section-title">CRO &amp; UX Recommendations</h2>
+      <div class="section-intro" id="recommendations-intro"></div>
       <div class="table-wrap" id="recommendations-wrap"></div>
     </section>
 
     <section class="section card" id="section-annual-plan">
-      <h2 class="section-title">Annual Action Plan (Quarterly)</h2>
+      <h2 class="section-title">12-Month Action Plan</h2>
       <div class="quarter-grid" id="quarter-grid"></div>
     </section>
 
@@ -676,15 +812,14 @@
   <script id="report-data" type="application/json">
 {
   "meta": {
-    "report_title": "Website Performance & CRO Audit",
-    "client_name": "Example Legal",
-    "analysis_period": "Nov 13, 2025 - Feb 11, 2026",
-    "generated_date": "February 2026",
-    "logo_path": "mlt-logo.png",
-    "data_sources": ["GA4", "Clarity", "Call tracking"],
+    "clientname": "Example Legal",
+    "analysisperiod": "Nov 13, 2025 - Feb 11, 2026",
+    "generateddate": "February 2026",
+    "logopath": "mlt-logo.png",
+    "datasources": ["Analytics", "Behaviour data", "Call tracking"],
     "hide_dev_note": false
   },
-  "executive_summary": {
+  "executivesummary": {
     "kpis": [
       {"code": "TS", "value": "1,541", "label": "Total Sessions", "note": "Steady, well-engaged visitors", "accent": "red"},
       {"code": "AT", "value": "120s", "label": "Avg. Time on Site", "note": "Good engagement depth", "accent": "orange"},
@@ -693,8 +828,53 @@
     ],
     "tldr": "Over the last three months, the website generated approximately 230-250 total enquiries. Phone enquiries significantly outnumber web forms. The homepage and key service pages show strong intent, but mobile users often miss high-value content in the first viewport."
   },
+  "benchmarksliders": {
+    "intro": "These benchmark indices provide an at-a-glance view of current conversion readiness and quarterly focus.",
+    "items": [
+      {
+        "id": "convert_existing_traffic",
+        "label": "Current Ability to Convert Existing Traffic",
+        "score": 57,
+        "target_next_quarter": 68,
+        "previous_score": 52,
+        "confidence": "High",
+        "confidence_note": "Score based on current enquiry pathways and channel-to-contact behaviour.",
+        "rationale": "Strong intent exists, but homepage and key decision pages still show avoidable conversion friction."
+      },
+      {
+        "id": "journey_friction",
+        "label": "Journey Friction Score",
+        "score": 46,
+        "target_next_quarter": 60,
+        "previous_score": 49,
+        "confidence": "Medium",
+        "confidence_note": "Estimated using dead-click signals and navigation behaviour.",
+        "rationale": "Users encounter avoidable UI friction on decision-critical journeys."
+      },
+      {
+        "id": "trust_authority",
+        "label": "Trust & Authority Score",
+        "score": 62,
+        "target_next_quarter": 70,
+        "previous_score": null,
+        "confidence": "Medium",
+        "confidence_note": "Data not available for prior period comparison.",
+        "rationale": "Trust signals are present but not consistently surfaced near first-touch CTAs."
+      },
+      {
+        "id": "tracking_data_quality",
+        "label": "Tracking & Data Quality Score",
+        "score": 41,
+        "target_next_quarter": 58,
+        "previous_score": 37,
+        "confidence": "Low",
+        "confidence_note": "Estimated due to missing lead-quality feedback loop.",
+        "rationale": "Core event capture is in place, but unified lead definitions and qualification data remain incomplete."
+      }
+    ]
+  },
   "baseline": {
-    "intro": "Core traffic, engagement and conversion metrics for the review period.",
+    "intro": "Core traffic, engagement and conversion metrics for the review period.\nThis view gives a clear baseline before priority fixes are implemented.",
     "tables": [
       {
         "title": "Traffic & Engagement",
@@ -704,13 +884,14 @@
           ["Average engagement time", "120s", "Strong attention for legal visitors"]
         ]
       }
-    ]
+    ],
+    "note": "Values shown are taken directly from the supplied period data."
   },
-  "top_pages": [
+  "toppages": [
     {"name": "Homepage", "meta": "654 views - Entry point for most visitors"},
     {"name": "Physiotherapy Compensation Story", "meta": "210 views - High intent content"}
   ],
-  "source_mix": {
+  "sourcemix": {
     "intro": "Breakdown of total form submissions by source.",
     "columns": ["Source", "Share", "Comment"],
     "rows": [
@@ -720,14 +901,14 @@
       ["Other", "3%", "Long-tail sources"]
     ]
   },
-  "behaviour_insights": [
+  "behaviourinsights": [
     {"title": "High Intent Content", "body": "Users actively engage with case stories and team profiles."},
-    {"title": "Mobile Scroll Constraint", "body": "Mobile users often do not pass the first viewport."},
+    {"title": "Mobile Scroll Constraint", "body": "Mobile users often do not pass the first viewport.\nImportant trust signals sit below this point."},
     {"title": "Friction Points", "body": "Some dead clicks and older URLs create avoidable friction."}
   ],
   "tracking": {
     "intro": "Current tracking captures core actions, with a few attribution gaps.",
-    "events_table": {
+    "eventstable": {
       "columns": ["Event", "Status", "Notes"],
       "rows": [
         ["Form submission", "Tracked", "Available in analytics"],
@@ -741,7 +922,7 @@
   },
   "recommendations": {
     "intro": "Prioritised UX and CRO actions based on observed behaviour and current tracking.",
-    "use_ice": true,
+    "useice": true,
     "rows": [
       {
         "area": "Homepage",
@@ -763,7 +944,7 @@
       }
     ]
   },
-  "annual_plan": {
+  "annualplan": {
     "quarters": [
       {
         "quarter": "Q1",
@@ -806,24 +987,7 @@
         "accent": "red"
       }
     ]
-  },
-  "next_90_days": [
-    {
-      "title": "Phase 1 (Weeks 1-4)",
-      "body": "Rework hero messaging, resolve dead clicks and improve mobile CTA visibility.",
-      "accent": "red"
-    },
-    {
-      "title": "Phase 2 (Weeks 5-8)",
-      "body": "Add conversion modules to high-engagement pages and refine enquiry form flow.",
-      "accent": "orange"
-    },
-    {
-      "title": "Measurement",
-      "body": "Track lead volume and source quality by channel to validate uplift.",
-      "accent": "ink"
-    }
-  ]
+  }
 }
   </script>
 
@@ -888,6 +1052,34 @@
         }).join('') + '</ul>';
       }
 
+      function splitParagraphs(text) {
+        if (isBlank(text)) return [];
+        return String(text)
+          .split(/\n{2,}/)
+          .map(function (x) { return x.trim(); })
+          .filter(function (x) { return x.length > 0; });
+      }
+
+      function renderParagraphs(text, className) {
+        var chunks = splitParagraphs(text);
+        if (!chunks.length) return '';
+        var klass = className ? ' class="' + escapeHtml(className) + '"' : '';
+        return chunks.map(function (chunk) {
+          return '<p' + klass + '>' + escapeHtml(chunk).replace(/\n/g, '<br>') + '</p>';
+        }).join('');
+      }
+
+      function renderInsightBody(body) {
+        if (isBlank(body)) return '';
+        var lines = String(body).split(/\n/).map(function (x) { return x.trim(); }).filter(Boolean);
+        if (lines.length > 1) {
+          return '<ul style="margin:0; padding-left:16px; color:#514957; font-size:12px; line-height:1.6;">' + lines.map(function (line) {
+            return '<li>' + escapeHtml(line) + '</li>';
+          }).join('') + '</ul>';
+        }
+        return '<p>' + escapeHtml(lines[0] || '') + '</p>';
+      }
+
       function priorityBadge(priority) {
         var val = String(priority || '').toLowerCase();
         if (val === 'high') return '<span class="badge high">High</span>';
@@ -924,38 +1116,134 @@
         return 'KPI';
       }
 
+      var BENCHMARK_ORDER = [
+        { id: 'convert_existing_traffic', label: 'Current Ability to Convert Existing Traffic' },
+        { id: 'journey_friction', label: 'Journey Friction Score' },
+        { id: 'trust_authority', label: 'Trust & Authority Score' },
+        { id: 'tracking_data_quality', label: 'Tracking & Data Quality Score' }
+      ];
+
+      var BENCHMARK_DEFAULT_NOTE = 'Data not available for this period.';
+
+      function toBoundedScore(value, fallback) {
+        var source = value == null ? '' : String(value);
+        var parsed = parseInt(source.replace(/[^0-9.-]/g, ''), 10);
+        if (isNaN(parsed)) parsed = fallback;
+        if (isNaN(parsed)) parsed = 0;
+        if (parsed < 0) parsed = 0;
+        if (parsed > 100) parsed = 100;
+        return parsed;
+      }
+
+      function toNullableScore(value) {
+        if (value == null || String(value).trim() === '') return null;
+        var parsed = parseInt(String(value).replace(/[^0-9.-]/g, ''), 10);
+        if (isNaN(parsed)) return null;
+        if (parsed < 0) parsed = 0;
+        if (parsed > 100) parsed = 100;
+        return parsed;
+      }
+
+      function normalizeConfidence(value) {
+        var cleaned = String(value || '').toLowerCase().trim();
+        if (cleaned === 'high') return 'High';
+        if (cleaned === 'low') return 'Low';
+        return 'Medium';
+      }
+
+      function benchmarkBandClass(score) {
+        if (score <= 39) return 'band-red';
+        if (score <= 69) return 'band-amber';
+        return 'band-green';
+      }
+
+      function benchmarkTrend(score, previousScore) {
+        if (previousScore == null) return { label: 'Trend: N/A', className: 'trend-na' };
+        var delta = score - previousScore;
+        if (delta > 0) return { label: 'Trend: Up +' + delta, className: 'trend-up' };
+        if (delta < 0) return { label: 'Trend: Down -' + Math.abs(delta), className: 'trend-down' };
+        return { label: 'Trend: Flat 0', className: 'trend-flat' };
+      }
+
+      function normalizeBenchmarkItems(items) {
+        var list = asArray(items);
+        if (!list.length) return [];
+
+        var byId = {};
+        list.forEach(function (item) {
+          if (!item || isBlank(item.id)) return;
+          byId[String(item.id).toLowerCase()] = item;
+        });
+
+        return BENCHMARK_ORDER.map(function (definition) {
+          var source = byId[definition.id] || {};
+          var score = toBoundedScore(source.score, 0);
+          var target = toBoundedScore(source.target_next_quarter, score);
+          var previous = toNullableScore(source.previous_score);
+          var confidenceNote = !isBlank(source.confidence_note) ? String(source.confidence_note) : '';
+          if (previous == null && isBlank(confidenceNote)) confidenceNote = BENCHMARK_DEFAULT_NOTE;
+
+          return {
+            id: definition.id,
+            label: !isBlank(source.label) ? String(source.label) : definition.label,
+            score: score,
+            target_next_quarter: target,
+            previous_score: previous,
+            confidence: normalizeConfidence(source.confidence),
+            confidence_note: confidenceNote,
+            rationale: !isBlank(source.rationale) ? String(source.rationale) : ''
+          };
+        });
+      }
+
       function normalize(raw) {
         var data = raw && typeof raw === 'object' ? raw : {};
+        var meta = data.meta || {};
+        var executive = data.executivesummary || data.executive_summary || {};
+        var sourceMix = data.sourcemix || data.source_mix || {};
+        var insights = data.behaviourinsights || data.behaviour_insights || [];
+        var annual = data.annualplan || data.annual_plan || {};
+        var benchmarkSliders = data.benchmarksliders || data.benchmark_sliders || {};
+        var tracking = data.tracking || {};
+        var trackingTable = tracking.eventstable || tracking.events_table || {};
+        var recommendations = data.recommendations || {};
 
         var out = {
-          meta: data.meta || {},
-          executive_summary: data.executive_summary || {},
+          meta: {
+            clientname: meta.clientname || meta.client_name || '',
+            analysisperiod: meta.analysisperiod || meta.analysis_period || '',
+            generateddate: meta.generateddate || meta.generated_date || '',
+            logopath: meta.logopath || meta.logo_path || '',
+            datasources: asArray(meta.datasources || meta.data_sources),
+            hide_dev_note: meta.hide_dev_note === true
+          },
+          executivesummary: executive,
           baseline: data.baseline || {},
-          top_pages: asArray(data.top_pages),
-          source_mix: data.source_mix || {},
-          behaviour_insights: asArray(data.behaviour_insights),
-          tracking: data.tracking || {},
-          recommendations: data.recommendations || {},
-          annual_plan: data.annual_plan || {},
-          next_90_days: asArray(data.next_90_days)
+          toppages: asArray(data.toppages || data.top_pages),
+          sourcemix: sourceMix,
+          behaviourinsights: asArray(insights),
+          benchmarksliders: {
+            intro: benchmarkSliders.intro || '',
+            items: normalizeBenchmarkItems(benchmarkSliders.items)
+          },
+          tracking: {
+            intro: tracking.intro || '',
+            eventstable: trackingTable,
+            gaps: tracking.gaps
+          },
+          recommendations: {
+            intro: recommendations.intro || '',
+            useice: recommendations.useice === true || recommendations.use_ice === true,
+            rows: asArray(recommendations.rows)
+          },
+          annualplan: {
+            quarters: asArray(annual.quarters).slice(0, 4)
+          }
         };
 
-        var cards = asArray(out.executive_summary.kpis).slice(0, 6);
-        out.executive_summary.kpis = cards;
-        out.executive_summary.kpi_cols = cards.length <= 1 ? 1 : (cards.length === 2 ? 2 : 3);
-
-        var quarters = asArray(out.annual_plan.quarters).slice(0, 4);
-        if (!quarters.length && out.next_90_days.length) {
-          quarters = out.next_90_days.slice(0, 4).map(function (phase, i) {
-            return {
-              quarter: 'Q' + (i + 1),
-              title: phase.title || ('Quarter ' + (i + 1)),
-              actions: [phase.body || 'Actions to be confirmed.'],
-              accent: phase.accent || 'ink'
-            };
-          });
-        }
-        out.annual_plan.quarters = quarters;
+        var cards = asArray(out.executivesummary.kpis).slice(0, 6);
+        out.executivesummary.kpis = cards;
+        out.executivesummary.kpi_cols = cards.length <= 1 ? 1 : (cards.length === 2 ? 2 : 3);
 
         return out;
       }
@@ -967,6 +1255,7 @@
           return JSON.parse(el.textContent || '{}');
         } catch (err) {
           hideSection('section-summary');
+          hideSection('section-benchmark-sliders');
           hideSection('section-baseline');
           hideSection('section-pages');
           hideSection('section-source-mix');
@@ -985,14 +1274,16 @@
 
       function render(data) {
         var meta = data.meta || {};
-        setText('report-title', meta.report_title, 'Website Performance & CRO Audit');
-        setText('report-client', meta.client_name, 'Client Name');
-        setText('report-period', 'Analysis Period: ' + (meta.analysis_period || 'Not set'));
+        var clientName = !isBlank(meta.clientname) ? String(meta.clientname) : 'Client Name';
+        setText('report-title', clientName + ' – CRO & UX Audit', 'Client Name – CRO & UX Audit');
+        setText('report-client', clientName);
+        setText('report-period', 'Analysis Period: ' + (meta.analysisperiod || 'Not set'));
+        document.title = clientName + ' – CRO & UX Audit';
 
         var devNote = byId('dev-note');
         if (devNote && meta.hide_dev_note === true) devNote.classList.add('hidden');
 
-        var logoPath = !isBlank(meta.logo_path) ? String(meta.logo_path) : DEFAULT_LOGO_DATA_URI;
+        var logoPath = !isBlank(meta.logopath) ? String(meta.logopath) : DEFAULT_LOGO_DATA_URI;
         var logoImages = document.querySelectorAll('.logo-lockup img, .footer-logo img');
         Array.prototype.forEach.call(logoImages, function (img) {
           img.onerror = function () {
@@ -1007,10 +1298,10 @@
         });
 
         var kpiGrid = byId('kpi-grid');
-        var kpis = asArray(data.executive_summary.kpis);
+        var kpis = asArray(data.executivesummary.kpis);
         if (kpiGrid && kpis.length) {
           kpiGrid.classList.remove('cols-1', 'cols-2', 'cols-3');
-          kpiGrid.classList.add('cols-' + (data.executive_summary.kpi_cols || 3));
+          kpiGrid.classList.add('cols-' + (data.executivesummary.kpi_cols || 3));
           kpiGrid.innerHTML = kpis.map(function (kpi) {
             var accent = String(kpi.accent || '').toLowerCase();
             if (!accent || ['red', 'orange', 'yellow', 'ink'].indexOf(accent) === -1) accent = 'ink';
@@ -1028,13 +1319,55 @@
         }
 
         var summaryText = byId('summary-text');
-        if (summaryText && !isBlank(data.executive_summary.tldr)) {
-          summaryText.innerHTML = '<p>' + escapeHtml(data.executive_summary.tldr) + '</p>';
+        if (summaryText && !isBlank(data.executivesummary.tldr)) {
+          summaryText.innerHTML = renderParagraphs(data.executivesummary.tldr);
         } else if (summaryText) {
           summaryText.innerHTML = '<p>No summary text provided for this period.</p>';
         }
 
-        setText('baseline-intro', data.baseline.intro || '');
+        var benchmarkIntro = byId('benchmark-intro');
+        if (benchmarkIntro) benchmarkIntro.innerHTML = renderParagraphs(data.benchmarksliders.intro || '', 'section-intro');
+        var benchmarkGrid = byId('benchmark-grid');
+        var benchmarkItems = asArray(data.benchmarksliders.items);
+        if (benchmarkGrid && benchmarkItems.length) {
+          benchmarkGrid.innerHTML = benchmarkItems.map(function (item) {
+            var score = toBoundedScore(item.score, 0);
+            var target = toBoundedScore(item.target_next_quarter, score);
+            var previous = item.previous_score == null ? null : toBoundedScore(item.previous_score, score);
+            var trend = benchmarkTrend(score, previous);
+            var confidence = normalizeConfidence(item.confidence);
+            var confidenceClass = 'conf-' + String(confidence).toLowerCase();
+            var bandClass = benchmarkBandClass(score);
+            var note = !isBlank(item.confidence_note) ? '<p class="benchmark-note">' + escapeHtml(item.confidence_note) + '</p>' : '';
+            var rationale = !isBlank(item.rationale) ? '<p class="benchmark-rationale">' + escapeHtml(item.rationale) + '</p>' : '';
+            return [
+              '<article class="benchmark-card">',
+              '<div class="benchmark-head">',
+              '<h3 class="benchmark-title">' + escapeHtml(item.label || '') + '</h3>',
+              '<span class="benchmark-score ' + escapeHtml(bandClass) + '">' + escapeHtml(String(score)) + '</span>',
+              '</div>',
+              '<div class="benchmark-rail">',
+              '<div class="benchmark-track"></div>',
+              '<span class="benchmark-marker current" style="left:' + escapeHtml(String(score)) + '%;" aria-label="Current score"></span>',
+              '<span class="benchmark-marker target" style="left:' + escapeHtml(String(target)) + '%;" aria-label="Next-quarter target"></span>',
+              '</div>',
+              '<div class="benchmark-legend">',
+              '<span><strong>Current:</strong> ' + escapeHtml(String(score)) + '</span>',
+              '<span><strong>Target:</strong> ' + escapeHtml(String(target)) + '</span>',
+              '<span class="trend-chip ' + escapeHtml(trend.className) + '">' + escapeHtml(trend.label) + '</span>',
+              '<span class="confidence-chip ' + escapeHtml(confidenceClass) + '">' + escapeHtml(confidence) + ' confidence</span>',
+              '</div>',
+              note,
+              rationale,
+              '</article>'
+            ].join('');
+          }).join('');
+        } else {
+          hideSection('section-benchmark-sliders');
+        }
+
+        var baselineIntro = byId('baseline-intro');
+        if (baselineIntro) baselineIntro.innerHTML = renderParagraphs(data.baseline.intro || '', 'section-intro');
         var baselineWrap = byId('baseline-tables');
         var baselineTables = asArray(data.baseline.tables);
         if (baselineWrap && baselineTables.length) {
@@ -1048,29 +1381,27 @@
               block.note ? '<p class="section-intro" style="margin-top:6px; margin-bottom:0;">' + escapeHtml(block.note) + '</p>' : '',
               '</div>'
             ].join('');
-          }).join('');
+          }).join('') + (isBlank(data.baseline.note) ? '' : '<p class="section-intro" style="margin-top:2px; margin-bottom:0;">' + escapeHtml(data.baseline.note) + '</p>');
         } else {
           hideSection('section-baseline');
         }
 
-        var pages = asArray(data.top_pages);
-        var pageList = byId('top-pages-list');
-        if (pageList && pages.length) {
-          pageList.innerHTML = pages.map(function (page) {
-            return [
-              '<li class="page-item">',
-              '<span class="page-name">' + escapeHtml(page.name || '') + '</span>',
-              '<span class="page-meta">' + escapeHtml(page.meta || '') + '</span>',
-              '</li>'
-            ].join('');
-          }).join('');
+        var pages = asArray(data.toppages);
+        var pageWrap = byId('top-pages-table-wrap');
+        if (pageWrap && pages.length) {
+          var pageColumns = ['Page', 'Notes'];
+          var pageRows = pages.map(function (page) {
+            return [page.name || '', page.meta || ''];
+          });
+          pageWrap.innerHTML = renderTable(pageColumns, pageRows);
         } else {
           hideSection('section-pages');
         }
 
-        setText('source-mix-intro', data.source_mix.intro || '');
+        var sourceIntro = byId('source-mix-intro');
+        if (sourceIntro) sourceIntro.innerHTML = renderParagraphs(data.sourcemix.intro || '', 'section-intro');
         var sourceWrap = byId('source-mix-table-wrap');
-        var sourceTable = renderTable(data.source_mix.columns, data.source_mix.rows);
+        var sourceTable = renderTable(data.sourcemix.columns, data.sourcemix.rows);
         if (sourceWrap && sourceTable) {
           sourceWrap.innerHTML = sourceTable;
         } else {
@@ -1078,13 +1409,13 @@
         }
 
         var insightGrid = byId('insight-grid');
-        var insights = asArray(data.behaviour_insights);
+        var insights = asArray(data.behaviourinsights);
         if (insightGrid && insights.length) {
           insightGrid.innerHTML = insights.slice(0, 6).map(function (item) {
             return [
               '<article class="insight-card">',
               '<h3>' + escapeHtml(item.title || '') + '</h3>',
-              '<p>' + escapeHtml(item.body || '') + '</p>',
+              renderInsightBody(item.body || ''),
               '</article>'
             ].join('');
           }).join('');
@@ -1092,15 +1423,18 @@
           hideSection('section-insights');
         }
 
-        setText('tracking-intro', data.tracking.intro || '');
+        var trackingIntro = byId('tracking-intro');
+        if (trackingIntro) trackingIntro.innerHTML = renderParagraphs(data.tracking.intro || '', 'section-intro');
         var trackingEvents = byId('tracking-events-wrap');
-        var trackingEventsTable = data.tracking.events_table ? renderTable(data.tracking.events_table.columns, data.tracking.events_table.rows) : '';
+        var trackingEventsTable = data.tracking.eventstable ? renderTable(data.tracking.eventstable.columns, data.tracking.eventstable.rows) : '';
         if (trackingEvents && trackingEventsTable) {
           trackingEvents.innerHTML = '<div class="table-wrap">' + trackingEventsTable + '</div>';
         }
 
         var trackingGaps = byId('tracking-gaps-wrap');
-        var trackingGapsHtml = renderList(data.tracking.gaps);
+        var trackingGapsHtml = Array.isArray(data.tracking.gaps)
+          ? renderList(data.tracking.gaps)
+          : renderParagraphs(data.tracking.gaps || '');
         if (trackingGaps && trackingGapsHtml) {
           trackingGaps.innerHTML = '<div class="muted-box"><strong style="display:block; margin-bottom:6px; color:#3e3747;">Tracking Gaps</strong>' + trackingGapsHtml + '</div>';
         }
@@ -1108,14 +1442,15 @@
           hideSection('section-tracking');
         }
 
-        setText('recommendations-intro', data.recommendations.intro || '');
+        var recIntro = byId('recommendations-intro');
+        if (recIntro) recIntro.innerHTML = renderParagraphs(data.recommendations.intro || '', 'section-intro');
         var recRows = asArray(data.recommendations.rows);
         var recWrap = byId('recommendations-wrap');
         if (recWrap && recRows.length) {
-          var useIce = !!data.recommendations.use_ice;
+          var useIce = !!data.recommendations.useice;
           var columns = useIce
-            ? ['Area', 'Issue', 'Recommended Fix', 'Expected Impact', 'Priority', 'ICE', 'Phase']
-            : ['Area', 'Issue', 'Recommended Fix', 'Expected Impact'];
+            ? ['Area', 'Issue', 'Recommended Fix', 'Impact', 'Priority', 'ICE', 'Phase']
+            : ['Area', 'Issue', 'Recommended Fix', 'Impact', 'Priority', 'Phase'];
 
           var rows = recRows.map(function (row) {
             if (useIce) {
@@ -1129,7 +1464,14 @@
                 row.phase || ''
               ];
             }
-            return [row.area || '', row.issue || '', row.fix || '', row.impact || ''];
+            return [
+              row.area || '',
+              row.issue || '',
+              row.fix || '',
+              row.impact || '',
+              priorityBadge(row.priority || ''),
+              row.phase || ''
+            ];
           });
 
           var head = '<thead><tr>' + columns.map(function (c) {
@@ -1138,7 +1480,7 @@
 
           var body = '<tbody>' + rows.map(function (cells) {
             return '<tr>' + cells.map(function (cell, idx) {
-              if (useIce && idx === 4) return '<td>' + cell + '</td>';
+              if (idx === 4) return '<td>' + cell + '</td>';
               return '<td>' + escapeHtml(cell) + '</td>';
             }).join('') + '</tr>';
           }).join('') + '</tbody>';
@@ -1149,7 +1491,7 @@
         }
 
         var quarterGrid = byId('quarter-grid');
-        var quarters = asArray(data.annual_plan.quarters);
+        var quarters = asArray(data.annualplan.quarters);
         if (quarterGrid && quarters.length) {
           quarterGrid.innerHTML = quarters.map(function (quarter, i) {
             var accent = String(quarter.accent || '').toLowerCase();
@@ -1174,9 +1516,9 @@
           hideSection('section-annual-plan');
         }
 
-        setText('footer-line-1', 'Report generated: ' + (meta.generated_date || 'N/A') + ' | CRO & UX Audit by MLT');
-        var sources = asArray(meta.data_sources);
-        setText('footer-line-2', 'Data sources: ' + (sources.length ? sources.join(', ') : 'Not specified') + ' | Period: ' + (meta.analysis_period || 'Not set'));
+        setText('footer-line-1', 'Report generated: ' + (meta.generateddate || 'N/A') + ' | CRO & UX Audit by MLT');
+        var sources = asArray(meta.datasources);
+        setText('footer-line-2', 'Data sources: ' + (sources.length ? sources.join(', ') : 'Not specified') + ' | Period: ' + (meta.analysisperiod || 'Not set'));
       }
 
       async function waitForPrintAssets() {

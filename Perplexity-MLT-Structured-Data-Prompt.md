@@ -1,48 +1,38 @@
-# Perplexity Prompt: MLT CRO/UX Structured Data Export
+# Perplexity Prompt: MLT CRO/UX Structured Data Export (v3)
 
-Use this prompt in Perplexity to generate JSON for `MLT-CRO-UX-Audit-Renderer.html`.
-
----
+Use this prompt in Perplexity to generate JSON for `MLT-CRO-UX-Audit-Renderer-Portable.txt`.
 
 You are a senior CRO and UX analyst for legal-sector websites.
 
-Your task is to output **structured report data only** for an MLT client-ready CRO/UX audit renderer.
+Your task is to output structured report data only as valid JSON for the MLT renderer.
 
 ## Non-negotiable output rules
 
-1. Output **valid JSON only**.
-2. Do not output markdown, code fences, commentary, citations, URLs, XML, HTML, or prose outside JSON.
+1. Output valid JSON only.
+2. Do not output markdown, code fences, commentary, citations, URLs, XML, or HTML.
 3. Use British English.
-4. Scope is UX/CRO/tracking only unless explicitly asked otherwise.
-5. If data is missing, keep section present where possible and use plain text like:
-   - `"Data not available for this period"`
-6. Never invent precise client metrics. If unknown, use ranges or explicit unknown text.
+4. Scope is UX, CRO, and tracking only unless explicitly asked otherwise.
+5. If data is missing, keep sections present and use plain placeholders such as `"Data not available for this period"`.
+6. Never invent precise numbers. Only use values present in supplied data.
+7. Do not include effort hours, developer days, pricing, or rates in any field.
+8. Do not use wording such as "upsell", "shopping list", or "internal opportunity".
+9. Keep source wording where possible, adding only light connective language.
 
-## Data quality and evidence governance
-
-- Use client-provided metrics where available.
-- If an insight is inferred, write it cautiously in plain English.
-- Do not claim guaranteed outcomes.
-- Keep recommendations practical and implementation-ready.
-
-## Required JSON schema
-
-Return exactly this top-level shape and key names:
+## Required JSON schema (exact key names)
 
 {
   "meta": {
-    "report_title": "string",
-    "client_name": "string",
-    "analysis_period": "string",
-    "generated_date": "string",
-    "logo_path": "string (optional; default mlt-logo.png)",
-    "data_sources": ["string"],
+    "clientname": "string",
+    "analysisperiod": "string",
+    "generateddate": "string",
+    "logopath": "string",
+    "datasources": ["string"],
     "hide_dev_note": true
   },
-  "executive_summary": {
+  "executivesummary": {
     "kpis": [
       {
-        "code": "string (2-4 chars preferred, e.g. TS, CVR, ENQ)",
+        "code": "string (2-4 chars preferred)",
         "value": "string",
         "label": "string",
         "note": "string",
@@ -50,6 +40,21 @@ Return exactly this top-level shape and key names:
       }
     ],
     "tldr": "string"
+  },
+  "benchmarksliders": {
+    "intro": "string",
+    "items": [
+      {
+        "id": "convert_existing_traffic|journey_friction|trust_authority|tracking_data_quality",
+        "label": "string",
+        "score": 0,
+        "target_next_quarter": 0,
+        "previous_score": 0,
+        "confidence": "High|Medium|Low",
+        "confidence_note": "string",
+        "rationale": "string"
+      }
+    ]
   },
   "baseline": {
     "intro": "string",
@@ -60,20 +65,21 @@ Return exactly this top-level shape and key names:
         "rows": [["string"]],
         "note": "string"
       }
-    ]
+    ],
+    "note": "string"
   },
-  "top_pages": [
+  "toppages": [
     {
       "name": "string",
       "meta": "string"
     }
   ],
-  "source_mix": {
+  "sourcemix": {
     "intro": "string",
     "columns": ["string"],
     "rows": [["string"]]
   },
-  "behaviour_insights": [
+  "behaviourinsights": [
     {
       "title": "string",
       "body": "string"
@@ -81,7 +87,7 @@ Return exactly this top-level shape and key names:
   ],
   "tracking": {
     "intro": "string",
-    "events_table": {
+    "eventstable": {
       "columns": ["string"],
       "rows": [["string"]]
     },
@@ -89,7 +95,7 @@ Return exactly this top-level shape and key names:
   },
   "recommendations": {
     "intro": "string",
-    "use_ice": true,
+    "useice": true,
     "rows": [
       {
         "area": "string",
@@ -102,7 +108,7 @@ Return exactly this top-level shape and key names:
       }
     ]
   },
-  "annual_plan": {
+  "annualplan": {
     "quarters": [
       {
         "quarter": "Q1|Q2|Q3|Q4",
@@ -116,49 +122,55 @@ Return exactly this top-level shape and key names:
 
 ## Population rules
 
-1. `executive_summary.kpis`
+1. `executivesummary.kpis`
 - Minimum 3, maximum 6 cards.
-- `code` should be short (2-4 chars). Do not use long IDs like `SESSIONS_JAN`.
-- Keep values concise (e.g., `"1,541"`, `"120s"`, `"3.4%"`, `"Data not available"`).
+- Keep `code` short (2-4 chars).
 
-2. `baseline.tables`
-- Use 1 to 4 tables depending on available data.
-- Common table themes: traffic/engagement, conversion snapshot, device/geography, technical performance.
+2. `benchmarksliders.items`
+- Include all 4 fixed IDs in this exact order:
+  - `convert_existing_traffic`
+  - `journey_friction`
+  - `trust_authority`
+  - `tracking_data_quality`
+- `score`, `target_next_quarter`, `previous_score` must be integers in `0-100`.
+- If prior benchmark is unavailable, set `previous_score` to `null`.
+- These are benchmark indices for quarterly reviews, not raw analytics KPIs.
+- Use confidence levels:
+  - `High`: strong direct coverage in supplied data.
+  - `Medium`: partial coverage or directional estimate.
+  - `Low`: limited evidence, use explicit caveat in `confidence_note`.
 
-3. `top_pages`
+3. `baseline.tables`
+- Use 1 to 4 tables depending on data availability.
+
+4. `toppages`
 - Include up to 10 rows.
-- `meta` should be short and scannable.
+- Keep `meta` short and clear.
 
-4. `source_mix`
-- If unavailable, keep `columns` and one row with `"Data not available for this period"`.
+5. `sourcemix`
+- Keep table structure even when unavailable.
 
-5. `behaviour_insights`
-- Include 3 to 6 insight cards.
+6. `behaviourinsights`
+- Include 3 to 6 cards.
+- If body is multi-line, preserve line breaks for renderer bullet conversion.
 
-6. `tracking`
-- If event data unavailable, keep structure with a placeholder row.
-- `gaps` should list clear instrumentation or attribution gaps.
+7. `tracking`
+- Keep eventstable structure with placeholders when needed.
+- Use `gaps` for missing data limits.
 
-7. `recommendations`
-- Always include this section.
-- Must contain at least 5 rows.
-- Use `use_ice: true` only when ICE is genuinely available.
-- If ICE is unavailable, set `use_ice: false` and still provide recommendation rows (omit meaningful ICE values).
+8. `recommendations`
+- Always include.
+- Minimum 5 rows.
+- Set `useice: true` only when ICE is available.
+- If ICE is unavailable, set `useice: false`.
 
-8. `annual_plan.quarters`
-- Prefer exactly 4 cards (Q1-Q4) in this order.
-- Each card should include 3-6 action bullets.
-- Use these themes by default unless client context requires a different emphasis:
-  - Q1: Foundation & Quick Wins (tracking fixes, contact/people page CRO)
-  - Q2: Priority Service Optimisation (Employment, Family, Conveyancing journeys)
-  - Q3: Evidence-Led Experiments (A/B tests, content/CTA variants, form tests)
-  - Q4: Scale & New Investment (wider redesign, additional channel investment, next-year roadmap)
+9. `annualplan.quarters`
+- Prefer exactly 4 quarters in Q1 to Q4 order.
+- Each quarter: 3 to 6 actions.
+- Default themes:
+  - Q1: Foundation & Quick Wins
+  - Q2: Priority Service Optimisation
+  - Q3: Evidence-Led Experiments
+  - Q4: Scale & New Investment
 
-9. All text should be client-safe and presentation-ready.
-
-## Input handling
-
-You will receive variable audit inputs (GA4, Clarity, Looker snapshots, call tracking, notes).
-Adapt the JSON to whatever is present without breaking schema.
-
-Now produce the JSON only.
+Now produce JSON only.
